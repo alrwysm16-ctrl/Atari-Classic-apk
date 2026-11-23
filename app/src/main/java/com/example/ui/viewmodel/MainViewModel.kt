@@ -162,6 +162,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setMuted(muted: Boolean) = viewModelScope.launch { settingsRepo.setMuted(muted) }
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settingsRepo.setThemeMode(mode) }
     fun setIsArabic(isAr: Boolean) = viewModelScope.launch { settingsRepo.setIsArabic(isAr) }
+    fun setShowTelegramPrompt(show: Boolean) = viewModelScope.launch { settingsRepo.setShowTelegramPrompt(show) }
 
     fun saveTouchLayout(
         scale: Float,

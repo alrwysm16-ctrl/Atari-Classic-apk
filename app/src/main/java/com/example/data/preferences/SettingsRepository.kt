@@ -45,6 +45,7 @@ class SettingsRepository(private val context: Context) {
         val B_OFFSET_X = floatPreferencesKey("b_offset_x")
         val B_OFFSET_Y = floatPreferencesKey("b_offset_y")
         val CATALOG_VERSION = intPreferencesKey("catalog_version")
+        val SHOW_TELEGRAM_PROMPT = booleanPreferencesKey("show_telegram_prompt")
     }
 
     val settingsFlow: Flow<UserSettings> = context.dataStore.data.map { prefs ->
@@ -76,8 +77,13 @@ class SettingsRepository(private val context: Context) {
             aButtonOffsetX = prefs[Keys.A_OFFSET_X] ?: 0f,
             aButtonOffsetY = prefs[Keys.A_OFFSET_Y] ?: 0f,
             bButtonOffsetX = prefs[Keys.B_OFFSET_X] ?: 0f,
-            bButtonOffsetY = prefs[Keys.B_OFFSET_Y] ?: 0f
+            bButtonOffsetY = prefs[Keys.B_OFFSET_Y] ?: 0f,
+            showTelegramDialogOnStart = prefs[Keys.SHOW_TELEGRAM_PROMPT] ?: true
         )
+    }
+
+    suspend fun setShowTelegramPrompt(show: Boolean) {
+        context.dataStore.edit { it[Keys.SHOW_TELEGRAM_PROMPT] = show }
     }
 
     suspend fun getCatalogVersion(): Int = context.dataStore.data.first()[Keys.CATALOG_VERSION] ?: 0

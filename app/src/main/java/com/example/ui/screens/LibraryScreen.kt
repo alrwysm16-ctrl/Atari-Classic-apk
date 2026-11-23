@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
@@ -89,6 +90,7 @@ fun LibraryScreen(
     onOpenGameDetail: (GameEntity) -> Unit,
     onToggleFavorite: (GameEntity) -> Unit,
     onOpenImportSheet: () -> Unit,
+    onOpenTelegram: () -> Unit = {},
     onNavigateSettings: () -> Unit
 ) {
     val colors = LocalAtariColors.current
@@ -122,6 +124,19 @@ fun LibraryScreen(
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onOpenTelegram,
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .testTag("library_telegram_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.Send,
+                        contentDescription = strings.telegramChannelsTitle,
+                        tint = colors.orange
+                    )
+                }
+
                 IconButton(
                     onClick = onOpenImportSheet,
                     modifier = Modifier

@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,9 @@ import com.example.data.model.ScreenFilterMode
 import com.example.data.model.ThemeMode
 import com.example.data.model.UserSettings
 import com.example.data.repository.StorageStats
+import com.example.ui.components.ATARI_TELEGRAM_CHANNELS
+import com.example.ui.components.TelegramChannelCard
+import com.example.ui.components.openTelegramUrl
 import com.example.ui.i18n.AppStrings
 import com.example.ui.theme.JetBrainsMonoFamily
 import com.example.ui.theme.LocalAtariColors
@@ -74,6 +78,7 @@ fun SettingsScreen(
     onVolumeChange: (Int) -> Unit,
     onToggleMute: () -> Unit,
     onToggleSwapControls: (Boolean) -> Unit,
+    onToggleTelegramPrompt: (Boolean) -> Unit = {},
     connectedGamepadName: String?,
     onResetTouchLayout: () -> Unit,
     onOpenImportRomFiles: () -> Unit,
@@ -269,6 +274,32 @@ fun SettingsScreen(
                 icon = Icons.Outlined.Info,
                 onClick = { showAboutDialog = true },
                 modifier = Modifier.testTag("setting_about")
+            )
+
+            // Official Telegram Channels Section
+            val context = LocalContext.current
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = strings.telegramChannelsTitle,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.amber,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            ATARI_TELEGRAM_CHANNELS.forEachIndexed { idx, channel ->
+                TelegramChannelCard(
+                    channel = channel,
+                    isArabic = settings.isArabic,
+                    actionLabel = strings.subscribeNow,
+                    onClick = { openTelegramUrl(context, channel.url) },
+                    modifier = Modifier.testTag("settings_telegram_channel_$idx")
+                )
+            }
+            SettingSwitchRow(
+                label = strings.telegramPromptSetting,
+                checked = settings.showTelegramDialogOnStart,
+                onCheckedChange = onToggleTelegramPrompt,
+                modifier = Modifier.testTag("setting_telegram_prompt_switch")
             )
 
             Spacer(modifier = Modifier.height(20.dp))

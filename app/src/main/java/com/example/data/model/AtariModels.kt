@@ -126,5 +126,6 @@ data class UserSettings(
     val aButtonOffsetX: Float = 0f,
     val aButtonOffsetY: Float = 0f,
     val bButtonOffsetX: Float = 0f,
-    val bButtonOffsetY: Float = 0f
+    val bButtonOffsetY: Float = 0f,
+    val showTelegramDialogOnStart: Boolean = true
 )

@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +41,7 @@ import androidx.navigation.navArgument
 import com.example.data.model.AspectRatioMode
 import com.example.data.model.ScreenFilterMode
 import com.example.data.model.ThemeMode
+import com.example.ui.components.TelegramSubscribeDialog
 import com.example.ui.i18n.getStrings
 import com.example.ui.screens.EmulatorPlayScreen
 import com.example.ui.screens.GameDetailScreen
@@ -249,6 +251,8 @@ private fun AtariClassicRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showLibraryImportDialog by remember { mutableStateOf(false) }
+    var startupTelegramDismissed by rememberSaveable { mutableStateOf(false) }
+    var showTelegramManualDialog by remember { mutableStateOf(false) }
 
     val importFilesLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
@@ -343,6 +347,7 @@ private fun AtariClassicRoot(
                                 },
                                 onToggleFavorite = mainVm::toggleFavorite,
                                 onOpenImportSheet = { showLibraryImportDialog = true },
+                                onOpenTelegram = { showTelegramManualDialog = true },
                                 onNavigateSettings = {
                                     navController.navigate("settings")
                                 }
@@ -441,6 +446,7 @@ private fun AtariClassicRoot(
                                 onVolumeChange = mainVm::setVolume,
                                 onToggleMute = { mainVm.setMuted(!settings.isMuted) },
                                 onToggleSwapControls = mainVm::setSwapControls,
+                                onToggleTelegramPrompt = mainVm::setShowTelegramPrompt,
                                 connectedGamepadName = connectedGamepad,
                                 onResetTouchLayout = {
                                     mainVm.resetTouchLayout()
@@ -483,6 +489,27 @@ private fun AtariClassicRoot(
                             importFolderLauncher.launch(null)
                         },
                         onDismiss = { showLibraryImportDialog = false }
+                    )
+                }
+
+                val shouldShowStartupTelegram = indexingState.isReady &&
+                    settings.showTelegramDialogOnStart &&
+                    !startupTelegramDismissed
+
+                if (shouldShowStartupTelegram || showTelegramManualDialog) {
+                    TelegramSubscribeDialog(
+                        isArabic = settings.isArabic,
+                        strings = strings,
+                        showDontAskOption = shouldShowStartupTelegram && !showTelegramManualDialog,
+                        onDismissSession = {
+                            startupTelegramDismissed = true
+                            showTelegramManualDialog = false
+                        },
+                        onDontShowAgain = {
+                            startupTelegramDismissed = true
+                            showTelegramManualDialog = false
+                            mainVm.setShowTelegramPrompt(false)
+                        }
                     )
                 }
             }

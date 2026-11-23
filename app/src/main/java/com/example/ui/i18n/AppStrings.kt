@@ -73,7 +73,15 @@ data class AppStrings(
     val privacyBody: String,
     val aboutBody: String,
     val gamesCountSuffix: String,
-    val sortLabel: String
+    val sortLabel: String,
+    val telegramChannelsTitle: String,
+    val telegramDialogTitle: String,
+    val telegramDialogBody: String,
+    val subscribeNow: String,
+    val subscribedLabel: String,
+    val continueToApp: String,
+    val dontShowAgain: String,
+    val telegramPromptSetting: String
 )
 
 fun getStrings(isArabic: Boolean): AppStrings = if (isArabic) {
@@ -150,7 +158,15 @@ fun getStrings(isArabic: Boolean): AppStrings = if (isArabic) {
         privacyBody = "يعمل تطبيق أتاري كلاسيك محلياً بالكامل بدون أي اتصال بالإنترنت أو خوادم خارجية. لا يجمع التطبيق أي بيانات شخصية أو تحليلات، وتُحفظ جميع الألعاب المستوردة وخانات الحفظ ولقطات الشاشة داخل مساحة التخزين المحلية على جهازك فقط.",
         aboutBody = "محاكي ألعاب أتاري والكلاسيكيات (2600 / 5200 / 7800 / Lynx / Jaguar) بمحرك مدمج 100% أوفلاين يضم أشهر الألعاب الكلاسيكية مثل سوبر ماريو وباك مان وغزاة الفضاء ودونكي كونغ وبيتبول مع مكتبة 2600 لعبة، تخصيص كامل لأزرار اللمس، ودعم كامل ليد التحكم Gamepad.",
         gamesCountSuffix = "لعبة",
-        sortLabel = "ترتيب"
+        sortLabel = "ترتيب",
+        telegramChannelsTitle = "قنواتنا على تليجرام",
+        telegramDialogTitle = "اشترك في قنواتنا على تليجرام",
+        telegramDialogBody = "انضم الآن إلى قنواتنا الرسمية لمتابعة أحدث الألعاب المعدلة والتحديثات والبوتات الحصرية:",
+        subscribeNow = "اشتراك",
+        subscribedLabel = "تم الفتح",
+        continueToApp = "متابعة للألعاب",
+        dontShowAgain = "عدم الإظهار عند الفتح",
+        telegramPromptSetting = "رسالة الاشتراك عند الفتح"
     )
 } else {
     AppStrings(
@@ -226,6 +242,14 @@ fun getStrings(isArabic: Boolean): AppStrings = if (isArabic) {
         privacyBody = "Atari Classic runs completely offline with zero network requests or telemetry. No personal data is collected; imported ROMs, save states, and screenshots stay strictly on your device.",
         aboutBody = "Classic Atari & retro arcade emulator (2600 / 5200 / 7800 / Lynx / Jaguar) running 100% offline with classics like Super Mario, Pac-Man, Space Invaders, Donkey Kong, Pitfall!, 2,600 bundled games, full touch customization, and Bluetooth/USB Gamepad support.",
         gamesCountSuffix = "games",
-        sortLabel = "Sort"
+        sortLabel = "Sort",
+        telegramChannelsTitle = "Our Telegram Channels",
+        telegramDialogTitle = "Join Our Telegram Channels",
+        telegramDialogBody = "Subscribe to our official Telegram channels for the latest modded APKs, updates, and bots:",
+        subscribeNow = "Subscribe",
+        subscribedLabel = "Opened",
+        continueToApp = "Continue to Games",
+        dontShowAgain = "Don't show on startup",
+        telegramPromptSetting = "Startup Subscribe Prompt"
     )
 }
