@@ -26,7 +26,7 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
-      - name: Decode and verify keystore
+      - name: Prepare keystore (alias must be upload)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -35,13 +35,18 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
           test -s "$RUNNER_TEMP/release.jks" || { echo "ERROR: KEYSTORE_BASE64 is empty or invalid"; exit 1; }
-          keytool -list -keystore "$RUNNER_TEMP/release.jks" -alias "$KEY_ALIAS" -storepass:env KS_PASS
-          for f in keystore.properties app/keystore.properties; do
-            printf "storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
-              "$RUNNER_TEMP/release.jks" "$KS_PASS" "$KEY_ALIAS" "$KEY_PASS" > "$f"
-          done
+          if ! keytool -list -keystore "$RUNNER_TEMP/release.jks" -alias upload -storepass:env KS_PASS >/dev/null 2>&1; then
+            keytool -changealias -keystore "$RUNNER_TEMP/release.jks" \
+              -alias "$KEY_ALIAS" -destalias upload \
+              -storepass:env KS_PASS -keypass:env KEY_PASS
+          fi
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -alias upload -storepass:env KS_PASS
 
       - name: Build release (APK + AAB)
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -o pipefail
           gradle assembleRelease bundleRelease --no-daemon --console=plain 2>&1 | tee build.log
@@ -54,34 +59,18 @@ jobs:
           echo "=============== ERRORS ==============="
           grep -n -E "^e: |error:|FAILED|Could not|Unsupported|not found" build.log | head -30 || true
 
-      - name: Sign APK and AAB
-        env:
-          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      - name: Collect and verify outputs
         run: |
           mkdir -p out
-          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
           APK=$(find . -path "*outputs/apk/release*" -name "*.apk" | head -1)
           AAB=$(find . -path "*outputs/bundle/release*" -name "*.aab" | head -1)
           echo "APK=$APK"
           echo "AAB=$AAB"
           test -n "$APK" || { echo "ERROR: no APK produced"; exit 1; }
-          "$BT/zipalign" -p -f 4 "$APK" out/aligned.apk
-          "$BT/apksigner" sign \
-            --ks "$RUNNER_TEMP/release.jks" \
-            --ks-key-alias "$KEY_ALIAS" \
-            --ks-pass env:KS_PASS \
-            --key-pass env:KEY_PASS \
-            --out out/AtariClassic-signed.apk out/aligned.apk
-          "$BT/apksigner" verify out/AtariClassic-signed.apk
-          rm -f out/aligned.apk
-          if [ -n "$AAB" ]; then
-            cp "$AAB" out/AtariClassic.aab
-            jarsigner -keystore "$RUNNER_TEMP/release.jks" \
-              -storepass:env KS_PASS -keypass:env KEY_PASS \
-              out/AtariClassic.aab "$KEY_ALIAS"
-          fi
+          cp "$APK" out/AtariClassic.apk
+          [ -z "$AAB" ] || cp "$AAB" out/AtariClassic.aab
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          "$BT/apksigner" verify --print-certs out/AtariClassic.apk
 
       - name: Upload release files
         uses: actions/upload-artifact@v4
@@ -99,4 +88,4 @@ jobs:
 
       - name: Cleanup keystore
         if: always()
-        run: rm -f "$RUNNER_TEMP/release.jks" keystore.properties app/keystore.properties
+        run: rm -f "$RUNNER_TEMP/release.jks"
