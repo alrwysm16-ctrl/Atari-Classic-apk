@@ -17,11 +17,11 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.13"
+          gradle-version: "9.3.1"
 
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
@@ -44,12 +44,7 @@ jobs:
       - name: Build release (APK + AAB)
         run: |
           set -o pipefail
-          if [ -f gradlew ] && [ -f gradle/wrapper/gradle-wrapper.jar ]; then
-            chmod +x gradlew
-            ./gradlew assembleRelease bundleRelease --no-daemon --console=plain 2>&1 | tee build.log
-          else
-            gradle assembleRelease bundleRelease --no-daemon --console=plain 2>&1 | tee build.log
-          fi
+          gradle assembleRelease bundleRelease --no-daemon --console=plain 2>&1 | tee build.log
 
       - name: Show failure reason
         if: failure()
