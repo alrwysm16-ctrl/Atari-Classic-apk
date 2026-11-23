@@ -73,7 +73,7 @@ fun GameDetailScreen(
                 .background(colors.bg),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "...", color = colors.muted)
+            androidx.compose.material3.CircularProgressIndicator(color = colors.orange)
         }
         return
     }

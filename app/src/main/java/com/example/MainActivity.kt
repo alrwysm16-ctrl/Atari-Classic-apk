@@ -12,6 +12,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -317,7 +319,11 @@ private fun AtariClassicRoot(
                 } else {
                     NavHost(
                         navController = navController,
-                        startDestination = "library"
+                        startDestination = "library",
+                        enterTransition = { EnterTransition.None },
+                        exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None },
+                        popExitTransition = { ExitTransition.None }
                     ) {
                         composable("library") {
                             LibraryScreen(
@@ -332,6 +338,7 @@ private fun AtariClassicRoot(
                                 onSearchChanged = mainVm::setSearchQuery,
                                 onSortChanged = mainVm::setSortMode,
                                 onOpenGameDetail = { game ->
+                                    mainVm.selectGame(game)
                                     navController.navigate("detail/${game.id}")
                                 },
                                 onToggleFavorite = mainVm::toggleFavorite,
@@ -347,8 +354,10 @@ private fun AtariClassicRoot(
                             arguments = listOf(navArgument("gameId") { type = NavType.StringType })
                         ) { entry ->
                             val gameId = entry.arguments?.getString("gameId") ?: return@composable
-                            val game by mainVm.observeGame(gameId).collectAsStateWithLifecycle()
-                            val slots by mainVm.observeSaveSlots(gameId).collectAsStateWithLifecycle()
+                            val gameFlow = remember(gameId) { mainVm.observeGame(gameId) }
+                            val slotsFlow = remember(gameId) { mainVm.observeSaveSlots(gameId) }
+                            val game by gameFlow.collectAsStateWithLifecycle()
+                            val slots by slotsFlow.collectAsStateWithLifecycle()
 
                             GameDetailScreen(
                                 game = game,
@@ -383,10 +392,12 @@ private fun AtariClassicRoot(
                         ) { entry ->
                             val gameId = entry.arguments?.getString("gameId") ?: return@composable
                             val slotArg = entry.arguments?.getInt("slot") ?: -1
+                            val preloaded = remember(gameId) { mainVm.getCachedGame(gameId) }
 
                             EmulatorPlayScreen(
                                 gameId = gameId,
                                 initialSlotIndex = if (slotArg >= 0) slotArg else null,
+                                preloadedGame = preloaded,
                                 settings = settings,
                                 strings = strings,
                                 viewModel = emulatorVm,

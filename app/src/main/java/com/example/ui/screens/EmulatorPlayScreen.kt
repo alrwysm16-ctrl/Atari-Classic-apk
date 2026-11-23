@@ -94,6 +94,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.AspectRatioMode
+import com.example.data.model.GameEntity
 import com.example.data.model.SaveSlotEntity
 import com.example.data.model.ScreenFilterMode
 import com.example.data.model.UserSettings
@@ -109,6 +110,7 @@ import kotlin.math.roundToInt
 fun EmulatorPlayScreen(
     gameId: String,
     initialSlotIndex: Int?,
+    preloadedGame: GameEntity? = null,
     settings: UserSettings,
     strings: AppStrings,
     viewModel: EmulatorViewModel,
@@ -160,7 +162,7 @@ fun EmulatorPlayScreen(
     }
 
     LaunchedEffect(gameId, initialSlotIndex) {
-        viewModel.startSession(gameId, initialSlotIndex)
+        viewModel.startSession(gameId, initialSlotIndex, preloadedGame)
     }
 
     LaunchedEffect(settings.volumePercent, settings.isMuted, settings.autoSave, settings.isArabic) {
@@ -844,10 +846,10 @@ private fun AtariScreenViewport(
                             var y = 0f
                             while (y < size.height) {
                                 drawLine(
-                                    color = Color(0x30000000),
+                                    color = Color(0x16000000),
                                     start = Offset(0f, y),
                                     end = Offset(size.width, y),
-                                    strokeWidth = 1.2f
+                                    strokeWidth = 1.0f
                                 )
                                 y += step
                             }
@@ -859,9 +861,9 @@ private fun AtariScreenViewport(
                                     colors = listOf(
                                         Color.Transparent,
                                         Color.Transparent,
-                                        Color(0x44000000)
+                                        Color(0x1E000000)
                                     ),
-                                    radius = size.maxDimension * 0.76f
+                                    radius = size.maxDimension * 0.85f
                                 )
                             )
                         }

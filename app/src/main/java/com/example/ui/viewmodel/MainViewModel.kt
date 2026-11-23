@@ -116,11 +116,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun observeGame(gameId: String) = repository.observeGame(gameId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val cachedGames = HashMap<String, GameEntity>()
+    private val gameFlows = HashMap<String, StateFlow<GameEntity?>>()
+    private val slotFlows = HashMap<String, StateFlow<List<SaveSlotEntity>>>()
 
-    fun observeSaveSlots(gameId: String) = repository.observeSaveSlots(gameId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    fun selectGame(game: GameEntity) {
+        cachedGames[game.id] = game
+    }
+
+    fun getCachedGame(gameId: String): GameEntity? {
+        return cachedGames[gameId] ?: games.value.firstOrNull { it.id == gameId }?.also {
+            cachedGames[gameId] = it
+        }
+    }
+
+    fun observeGame(gameId: String): StateFlow<GameEntity?> {
+        return gameFlows.getOrPut(gameId) {
+            repository.observeGame(gameId)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), getCachedGame(gameId))
+        }
+    }
+
+    fun observeSaveSlots(gameId: String): StateFlow<List<SaveSlotEntity>> {
+        return slotFlows.getOrPut(gameId) {
+            repository.observeSaveSlots(gameId)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }
+    }
 
     fun deleteSaveSlot(gameId: String, slotIndex: Int) {
         viewModelScope.launch {

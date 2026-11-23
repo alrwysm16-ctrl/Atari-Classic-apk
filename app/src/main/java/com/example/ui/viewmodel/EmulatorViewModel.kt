@@ -104,20 +104,20 @@ class EmulatorViewModel(application: Application) : AndroidViewModel(application
         _connectedGamepadName.value = name
     }
 
-    fun startSession(gameId: String, initialSlotIndex: Int?) {
+    fun startSession(gameId: String, initialSlotIndex: Int?, preloadedGame: GameEntity? = null) {
         if (currentGameId == gameId && loopJob?.isActive == true) return
         stopLoop()
         clearAllInputs()
         currentGameId = gameId
 
         viewModelScope.launch {
-            _uiState.value = EmulatorUiState(isLoading = true)
+            _uiState.value = EmulatorUiState(game = preloadedGame, isLoading = true)
             val settings = settingsRepo.settingsFlow.first()
             autoSaveOnExit = settings.autoSave
             isArabic = settings.isArabic
             audioPlayer.setVolume(settings.volumePercent, settings.isMuted)
 
-            val game = repository.getGame(gameId)
+            val game = preloadedGame ?: repository.getGame(gameId)
             if (game == null) {
                 _uiState.value = EmulatorUiState(
                     isLoading = false,
