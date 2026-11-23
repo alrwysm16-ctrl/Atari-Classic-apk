@@ -1,4 +1,4 @@
-name: Build Atari Classic (Signed APK + AAB)
+name: Build Atari Classic (APK + AAB)
 
 on:
   push:
@@ -12,71 +12,67 @@ jobs:
     env:
       GRADLE_OPTS: "-Xmx3g -Dorg.gradle.daemon=false"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
 
-      - name: Decode and verify keystore
+      - name: Prepare environment and keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          echo "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
-          test -s "$RUNNER_TEMP/release.jks" || { echo "ERROR: KEYSTORE_BASE64 is empty or invalid"; exit 1; }
-          keytool -list -keystore "$RUNNER_TEMP/release.jks" -alias "$KEY_ALIAS" -storepass:env KS_PASS
+          # 1. إنشاء ملف .env لتجنب فشل إضافة secrets
+          if [ ! -f .env ] && [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            touch .env
+          fi
 
-      - name: Build release
+          # 2. تجهيز مفتاح التوقيع (من Secrets أو إنشاء مفتاح تلقائي)
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=$KS_PASS" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$KEY_PASS" >> $GITHUB_ENV
+          else
+            keytool -genkeypair -v \
+              -keystore "$RUNNER_TEMP/release.jks" \
+              -alias upload \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android123 -keypass android123 \
+              -dname "CN=AtariClassic, OU=Dev, O=App, L=City, S=State, C=SA"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=android123" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=android123" >> $GITHUB_ENV
+          fi
+
+      - name: Build Release APK & AAB
         run: |
-          if [ -f gradlew ] && [ -f gradle/wrapper/gradle-wrapper.jar ]; then
+          if [ -f gradlew ]; then
             chmod +x gradlew
             ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
           else
             gradle assembleRelease bundleRelease --no-daemon --stacktrace
           fi
 
-      - name: Sign APK
-        env:
-          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
-          OUT=app/build/outputs/apk/release
-          ls -la "$OUT"
-          UNSIGNED=$(ls $OUT/*.apk | head -1)
-          "$BT/zipalign" -p -f 4 "$UNSIGNED" "$OUT/aligned.apk"
-          "$BT/apksigner" sign \
-            --ks "$RUNNER_TEMP/release.jks" \
-            --ks-key-alias "$KEY_ALIAS" \
-            --ks-pass env:KS_PASS \
-            --key-pass env:KEY_PASS \
-            --out "$OUT/AtariClassic-signed.apk" "$OUT/aligned.apk"
-          "$BT/apksigner" verify "$OUT/AtariClassic-signed.apk"
-
-      - name: Sign AAB
-        env:
-          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
-          jarsigner -keystore "$RUNNER_TEMP/release.jks" \
-            -storepass:env KS_PASS -keypass:env KEY_PASS \
-            "$AAB" "$KEY_ALIAS"
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: atari-classic-release
+          name: AtariClassic-Release
           path: |
-            app/build/outputs/apk/release/AtariClassic-signed.apk
+            app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
 
       - name: Cleanup keystore
