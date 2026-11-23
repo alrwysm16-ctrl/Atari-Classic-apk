@@ -1,0 +1,6 @@
+{
+  "name": "أتاري كلاسيك",
+  "description": "محاكي ألعاب أتاري الكلاسيكي أوفلاين بالكامل مع مكتبة مدمجة من 2600 لعبة، حفظ متعدد الخانات، فلاتر CRT، ودعم أزرار اللمس وأيدي التحكم.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
